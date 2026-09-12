@@ -1,0 +1,5 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+modelo_manutencao_rfc.pkl
