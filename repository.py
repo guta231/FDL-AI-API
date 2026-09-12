@@ -20,13 +20,19 @@ def buscar_registro(campo_busca, valor_busca):
     finally:
         conexao.close()
 
-def buscar_candidatos_leads(limite=500):
+def buscar_candidatos_leads(limite: int):
     conexao = connection_db.init_database()
-    try:
-        with conexao.cursor() as cursor:
-            # Puxa clientes recentes que já tem mais de 45 dias desde a última visita (não voltaram recentemente)
-            sql = "SELECT * FROM dealer_code_ml WHERE DaysLastVisit > 45 LIMIT %s"
-            cursor.execute(sql, (limite,))
-            return cursor.fetchall()
-    finally:
-        conexao.close()
+    cursor = conexao.cursor()
+    
+    # Busca focada apenas na nova coluna em inglês
+    query = """
+        SELECT * FROM dealer_flow.dealer_code_ml 
+        WHERE propensity_score IS NOT NULL 
+        ORDER BY propensity_score DESC 
+        LIMIT %s
+    """
+    cursor.execute(query, (limite,))
+    resultados = cursor.fetchall()
+    conexao.close()
+    
+    return resultados

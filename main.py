@@ -29,27 +29,17 @@ def consulta_individual(campo: str, valor: str):
     }
 
 @app.get("/top-leads")
-def gerar_top_leads(qtd: int = 10):
-    """
-    Vasculha clientes que não voltaram recentemente, calcula a 
-    probabilidade de todos e devolve os top N com maior chance.
-    """
-    # Busca um lote de candidatos do MySQL
-    candidatos = repository.buscar_candidatos_leads(limite=500)
+def gerar_top_leads(quantidade: int = 10):
+    # A API vai direto no banco e traz os melhores ranqueados
+    candidatos = repository.buscar_candidatos_leads(quantidade)
     
     leads_avaliados = []
     for cliente in candidatos:
-        prob = ml_service.prever_probabilidade(cliente)
-        # Adiciona a propensão direto no dicionário do cliente
-        cliente['Score_Probabilidade'] = prob
+        # Apenas pega a probabilidade da nova coluna do banco para manter o formato do JSON
+        cliente['Score_Probabilidade'] = cliente.get('propensity_score')
         leads_avaliados.append(cliente)
     
-    # Ordena a lista de clientes pela probabilidade (do maior pro menor)
-    leads_avaliados.sort(key=lambda x: x['Score_Probabilidade'], reverse=True)
-    
-    # Devolve apenas o top N desejado
     return {
         "status": "sucesso",
-        "total_analysed": len(candidatos),
-        "top_leads": leads_avaliados[:qtd]
+        "top_leads": leads_avaliados
     }
