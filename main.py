@@ -1,32 +1,46 @@
+import joblib
 from fastapi import FastAPI, HTTPException
 import repository
-import ml_service
 
-app = FastAPI(
-    title="FDL AI API",
-    description="API that return the probability of a customer returning to the dealership within 60 days.",
-    version="1.0"
-)
+app = FastAPI()
 
-@app.get("/consult/{campo}/{valor}")
-def consulta_individual(campo: str, valor: str):
-    """
-    Busca um cliente por VIN_Hash, MaintenanceID ou ID e devolve a probabilidade.
-    """
-    dados = repository.buscar_registro(campo, valor)
+# 1. Carrega a IA na memória do Pi UMA ÚNICA VEZ ao ligar a API
+print("Carregando IA na memória...")
+modelo_ia = joblib.load('modelo_manutencao_rfc.pkl')
+
+@app.get("/consult/ID/{cliente_id}")
+def consultar_cliente(cliente_id: int):
+    # CORREÇÃO 1: Usando o nome correto da função e passando 'ID' como campo de busca
+    cliente = repository.buscar_registro('ID', cliente_id)
     
-    if not dados:
+    if not cliente:
         raise HTTPException(status_code=404, detail="Registro não encontrado no banco de dados.")
+        
+    # Verifica se o score já existe no banco
+    if cliente.get('propensity_score') is not None:
+        cliente['Score_Probabilidade'] = cliente['propensity_score']
+        return {"status": "sucesso (via banco)", "dados": cliente}
+        
+    # CORREÇÃO 2: Substitua os nomes abaixo pelas colunas REAIS que você usou no X_train
+    # Exemplo: cliente['Mileage'], cliente['VehicleAge'], etc.
+    features = [
+        cliente['DaysLastVisit'], 
+        cliente['ModelYear'], 
+        cliente['ModelName'],
+        cliente['MaintenanceNumber'],
+        cliente['ServiceCode'],
+        cliente['DealerCode'],
+        cliente['KM'],
+        cliente['KM/Day']
+    ] 
     
-    # Passa o JSON do cliente pela IA
-    prob = ml_service.prever_probabilidade(dados)
+    score_calculado = float(modelo_ia.predict_proba([features])[0][1])
     
-    # Retorna o JSON completo e insere a probabilidade calculada
-    return {
-        "status": "sucesso",
-        "probabilidade_retorno_60_dias_pct": prob,
-        "dados_cliente": dados
-    }
+    # Salva no banco para a próxima vez
+    repository.atualizar_score_individual(cliente_id, score_calculado)
+    
+    cliente['Score_Probabilidade'] = score_calculado
+    return {"status": "sucesso (via IA sob demanda)", "dados": cliente}
 
 @app.get("/top-leads")
 def gerar_top_leads(quantidade: int = 10):
