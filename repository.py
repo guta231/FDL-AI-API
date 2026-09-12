@@ -13,7 +13,7 @@ def buscar_registro(campo_busca, valor_busca):
     try:
         with conexao.cursor() as cursor:
             # Busca o último registro do carro/manutenção
-            sql = f"SELECT * FROM dealer_code_ML WHERE {campo_busca} = %s ORDER BY ServiceDate DESC LIMIT 1"
+            sql = f"SELECT * FROM dealer_code_ml WHERE {campo_busca} = %s ORDER BY ServiceDate DESC LIMIT 1"
             cursor.execute(sql, (valor_busca,))
             resultado = cursor.fetchone()
             return resultado
@@ -25,7 +25,7 @@ def buscar_candidatos_leads(limite=500):
     try:
         with conexao.cursor() as cursor:
             # Puxa clientes recentes que já tem mais de 45 dias desde a última visita (não voltaram recentemente)
-            sql = "SELECT * FROM dealer_code_ML WHERE DaysLastVisit > 45 LIMIT %s"
+            sql = "SELECT * FROM dealer_code_ml WHERE DaysLastVisit > 45 LIMIT %s"
             cursor.execute(sql, (limite,))
             return cursor.fetchall()
     finally:
