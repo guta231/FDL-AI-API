@@ -7,7 +7,6 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-# Instala as bibliotecas sem guardar cache para deixar a imagem menor
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .

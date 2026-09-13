@@ -4,56 +4,54 @@ import repository
 
 app = FastAPI()
 
-# 1. Carrega a IA na memória do Pi UMA ÚNICA VEZ ao ligar a API
-print("Carregando IA na memória...")
-modelo_ia = joblib.load('modelo_manutencao_rfc.pkl')
 
-@app.get("/consult/ID/{cliente_id}")
-def consultar_cliente(cliente_id: int):
-    # CORREÇÃO 1: Usando o nome correto da função e passando 'ID' como campo de busca
-    cliente = repository.buscar_registro('ID', cliente_id)
+print("Loading the machine learning model into memory...")
+ai_model = joblib.load('ai_model_ford.pkl')
+
+@app.get("/consult/ID/{customer_id}")
+def consult_customer(customer_id: int):
+
+    customer = repository.search_registry('ID', customer_id)
     
-    if not cliente:
-        raise HTTPException(status_code=404, detail="Registro não encontrado no banco de dados.")
+    if not customer:
+        raise HTTPException(status_code=404, detail="Registry not found in the database.")
         
-    # Verifica se o score já existe no banco
-    if cliente.get('propensity_score') is not None:
-        cliente['Score_Probabilidade'] = cliente['propensity_score']
-        return {"status": "sucesso (via banco)", "dados": cliente}
+
+    if customer.get('propensity_score') is not None:
+        customer['Score_Probabilidade'] = customer['propensity_score']
+        return {"status": "success (via database)", "data": customer}
         
-    # CORREÇÃO 2: Substitua os nomes abaixo pelas colunas REAIS que você usou no X_train
-    # Exemplo: cliente['Mileage'], cliente['VehicleAge'], etc.
+
     features = [
-        cliente['DaysLastVisit'], 
-        cliente['ModelYear'], 
-        cliente['ModelName'],
-        cliente['MaintenanceNumber'],
-        cliente['ServiceCode'],
-        cliente['DealerCode'],
-        cliente['KM'],
-        cliente['KM/Day']
+        customer['DaysLastVisit'], 
+        customer['ModelYear'], 
+        customer['ModelName'],
+        customer['MaintenanceNumber'],
+        customer['ServiceCode'],
+        customer['DealerCode'],
+        customer['KM'],
+        customer['KM/Day']
     ] 
     
-    score_calculado = float(modelo_ia.predict_proba([features])[0][1])
+    score_calculated = float(ai_model.predict_proba([features])[0][1])
     
-    # Salva no banco para a próxima vez
-    repository.atualizar_score_individual(cliente_id, score_calculado)
+
+    repository.update_individual_score(customer_id, score_calculated)
     
-    cliente['Score_Probabilidade'] = score_calculado
-    return {"status": "sucesso (via IA sob demanda)", "dados": cliente}
+    customer['Score_Probabilidade'] = score_calculated
+    return {"status": "success (via IA on-demand)", "data": customer}
 
 @app.get("/top-leads")
-def gerar_top_leads(quantidade: int = 10):
-    # A API vai direto no banco e traz os melhores ranqueados
-    candidatos = repository.buscar_candidatos_leads(quantidade)
+def gen_top_leads(qtf: int = 10):
+
+    candidates = repository.search_candidates_leads(qtf)
     
-    leads_avaliados = []
-    for cliente in candidatos:
-        # Apenas pega a probabilidade da nova coluna do banco para manter o formato do JSON
-        cliente['Score_Probabilidade'] = cliente.get('propensity_score')
-        leads_avaliados.append(cliente)
+    leads_available = []
+    for customer in candidates:
+
+        leads_available.append(customer)
     
     return {
-        "status": "sucesso",
-        "top_leads": leads_avaliados
+        "status": "success",
+        "top_leads": leads_available
     }

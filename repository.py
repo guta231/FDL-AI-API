@@ -1,45 +1,45 @@
 import connection_db
 
-def buscar_registro(campo_busca, valor_busca):
-    conexao = connection_db.init_database()
-    if not conexao:
+def search_registry(search_field, search_value):
+    connection = connection_db.init_database()
+    if not connection:
         return None
     
-    campos_permitidos = ['VIN_Hash', 'MaintenanceID', 'ID']
-    if campo_busca not in campos_permitidos:
+    able_fields = ['VIN_Hash', 'MaintenanceID', 'ID']
+    if search_field not in able_fields:
         return None
         
     try:
-        with conexao.cursor() as cursor:
-            # CORREÇÃO: Adicionado dealer_flow. antes da tabela
-            sql = f"SELECT * FROM dealer_flow.dealer_code_ml WHERE {campo_busca} = %s ORDER BY ServiceDate DESC LIMIT 1"
-            cursor.execute(sql, (valor_busca,))
-            resultado = cursor.fetchone()
-            return resultado
+        with connection.cursor() as cursor:
+ 
+            query = f"SELECT * FROM dealer_flow.dealer_code_ml WHERE {search_field} = %s ORDER BY ServiceDate DESC LIMIT 1"
+            cursor.execute(query, (search_value,))
+            result = cursor.fetchone()
+            return result
     finally:
-        conexao.close()
+        connection.close()
 
-def buscar_candidatos_leads(limite: int):
-    conexao = connection_db.init_database()
-    cursor = conexao.cursor()
+def search_candidates_leads(limit: int):
+    connection = connection_db.init_database()
+    cursor = connection.cursor()
     
-    # Busca focada apenas na nova coluna em inglês
+
     query = """
         SELECT * FROM dealer_flow.dealer_code_ml 
         WHERE propensity_score IS NOT NULL 
         ORDER BY propensity_score DESC 
         LIMIT %s
     """
-    cursor.execute(query, (limite,))
-    resultados = cursor.fetchall()
-    conexao.close()
+    cursor.execute(query, (limit,))
+    results = cursor.fetchall()
+    connection.close()
     
-    return resultados
+    return results
 
-def atualizar_score_individual(id_cliente: int, score: float):
-    conexao = connection_db.init_database()
-    cursor = conexao.cursor()
+def update_individual_score(id_customer: int, score: float):
+    connection = connection_db.init_database()
+    cursor = connection.cursor()
     query = "UPDATE dealer_flow.dealer_code_ml SET propensity_score = %s WHERE ID = %s"
-    cursor.execute(query, (score, id_cliente))
-    conexao.commit()
-    conexao.close()
+    cursor.execute(query, (score, id_customer))
+    connection.commit()
+    connection.close()
