@@ -23,13 +23,18 @@ def search_candidates_leads(limit: int):
     connection = connection_db.init_database()
     cursor = connection.cursor()
     
-
     query = """
-        SELECT * FROM dealer_flow.dealer_code_ml 
-        WHERE propensity_score IS NOT NULL 
-        ORDER BY propensity_score DESC 
-        LIMIT %s
-    """
+            SELECT t1.* 
+            FROM dealer_flow.dealer_code_ml t1
+            INNER JOIN (
+                SELECT VIN_Hash, MAX(ServiceDate) as UltimaVisita
+                FROM dealer_flow.dealer_code_ml
+                GROUP BY VIN_Hash
+            ) t2 ON t1.VIN_Hash = t2.VIN_Hash AND t1.ServiceDate = t2.UltimaVisita
+            WHERE t1.propensity_score IS NOT NULL 
+            ORDER BY t1.propensity_score DESC 
+            LIMIT %s
+        """
     cursor.execute(query, (limit,))
     results = cursor.fetchall()
     connection.close()
