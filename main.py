@@ -18,7 +18,6 @@ def consult_customer(customer_id: int):
         
 
     if customer.get('propensity_score') is not None:
-        customer['Score_Probabilidade'] = customer['propensity_score']
         return {"status": "success (via database)", "data": customer}
         
 
@@ -38,7 +37,7 @@ def consult_customer(customer_id: int):
 
     repository.update_individual_score(customer_id, score_calculated)
     
-    customer['Score_Probabilidade'] = score_calculated
+    customer['propensity_score'] = score_calculated
     return {"status": "success (via IA on-demand)", "data": customer}
 
 @app.get("/top-leads")
