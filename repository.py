@@ -26,12 +26,13 @@ def search_candidates_leads(limit: int):
     query = """
             SELECT t1.* 
             FROM dealer_flow.dealer_code_ml t1
-            INNER JOIN (
-                SELECT VIN_Hash, MAX(ServiceDate) as UltimaVisita
-                FROM dealer_flow.dealer_code_ml
-                GROUP BY VIN_Hash
-            ) t2 ON t1.VIN_Hash = t2.VIN_Hash AND t1.ServiceDate = t2.UltimaVisita
             WHERE t1.propensity_score IS NOT NULL 
+            AND NOT EXISTS (
+                SELECT 1 
+                FROM dealer_flow.dealer_code_ml t2
+                WHERE t2.VIN_Hash = t1.VIN_Hash 
+                    AND t2.ServiceDate > t1.ServiceDate
+            )
             ORDER BY t1.propensity_score DESC 
             LIMIT %s
         """
