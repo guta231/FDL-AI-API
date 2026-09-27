@@ -29,7 +29,7 @@ jobs:
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10-slim' # Altere para a versão do seu projeto
+          python-version: '3.10' # Altere para a versão do seu projeto
 
       - name: Instalar ferramentas de segurança
         run: pip install bandit safety
