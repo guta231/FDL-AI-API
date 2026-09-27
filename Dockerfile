@@ -10,8 +10,9 @@ COPY requirements.txt .
 RUN sed -i '/setuptools/d' requirements.txt || true && \
     sed -i '/msgpack/d' requirements.txt || true && \
     pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir "msgpack>=1.2.2" && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir "setuptools>=78.1.1" "msgpack>=1.2.1"
+    pip uninstall -y setuptools wheel
 
 COPY . .
 
