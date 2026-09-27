@@ -5,3 +5,4 @@ pymysql
 python-dotenv
 fastapi
 uvicorn
+msgpack>=1.2.1
