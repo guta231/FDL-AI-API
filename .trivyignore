@@ -1,0 +1,5 @@
+# O Debian 13 possui essas versoes no OS, mas a nossa API FastAPI
+# roda utilizando o msgpack >= 1.2.2 e sem setuptools pelo pip.
+# Tratam-se de falsos positivos no contexto da aplicacao.
+GHSA-6v7p-g79w-8964
+CVE-2025-47273
