@@ -1,0 +1,69 @@
+name: Pipeline DevSecOps - API Python
+
+# Define quando o pipeline vai rodar (ao fazer push ou pull request na main)
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  # ==========================================
+  # ESTÁGIO 1: Análise do Código e Dependências
+  # ==========================================
+  security-code-scan:
+    name: Secret Scan, SAST e SCA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Necessário para varrer o histórico do Git
+
+      # 1. SECRET SCANNING (Gitleaks)
+      - name: Escaneamento de Segredos (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10-slim' # Altere para a versão do seu projeto
+
+      - name: Instalar ferramentas de segurança
+        run: pip install bandit safety
+
+      # 2. SAST (Bandit - Segurança de código Python)
+      - name: Análise Estática de Segurança (SAST)
+        run: bandit -r . -ll -ii
+
+      # 3. SCA (Safety - Vulnerabilidades nas bibliotecas)
+      - name: Análise de Composição (SCA)
+        run: safety check -r requirements.txt --full-report
+
+  # ==========================================
+  # ESTÁGIO 2: Segurança do Container
+  # ==========================================
+  container-security:
+    name: Build & Container Scan
+    needs: security-code-scan # Só roda se o código passar no estágio anterior
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      # BUILD DA IMAGEM
+      - name: Construir Imagem Docker
+        run: docker build -t ford-api-ia:latest .
+
+      # 4. CONTAINER SECURITY (Trivy)
+      - name: Escaneamento do Container (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ford-api-ia:latest'
+          format: 'table'
+          exit-code: '1' # Trava o pipeline se achar algo grave
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
