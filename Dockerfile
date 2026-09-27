@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.10-slim
 
 
 RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
@@ -7,12 +7,7 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-RUN sed -i '/setuptools/d' requirements.txt || true && \
-    sed -i '/msgpack/d' requirements.txt || true && \
-    pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir "msgpack>=1.2.2" && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip uninstall -y setuptools wheel
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
